@@ -1,35 +1,36 @@
+import os
 import requests
-from memory_profiler import profile
+import re
+from collections import Counter
 
-def get_text(url):
+def get_text(url, cache_file="cached_page.html"):
+    if os.path.exists(cache_file):
+        with open(cache_file, 'r', encoding='utf-8') as f:
+            return f.read()
     response = requests.get(url)
-    return response.text
+    text = response.text
+    with open(cache_file, 'w', encoding='utf-8') as f:
+        f.write(text)
+    return text
 
-def count_word_frequencies(url, word):
-    text = get_text(url)
-    words = text.split()
-    count = 0
-    for w in words:
-        if w == word:
-            count += 1
-    return count
+def preprocess_text(text):
+    text = re.sub(r'<[^>]+>', '', text)
+    words = re.findall(r'\b\w+\b', text.lower())
+    return words
 
-@profile
 def main():
     words_file = "words.txt"
     url = "https://eng.mipt.ru/why-mipt/"
 
-    words_to_count = []
-    with open(words_file, 'r') as file:
-        for line in file:
-            word = line.strip()
-            if word:
-                words_to_count.append(word)
+    raw_text = get_text(url)
+    words = preprocess_text(raw_text)
+    word_counter = Counter(words)
 
-    frequencies = {}
-    for word in words_to_count:
-        frequencies[word] = count_word_frequencies(url, word)
-    
+    with open(words_file, 'r') as file:
+        words_to_count = [line.strip().lower() for line in file if line.strip()]
+
+    frequencies = {word: word_counter[word] for word in words_to_count}
+
     print(frequencies)
 
 if __name__ == "__main__":
