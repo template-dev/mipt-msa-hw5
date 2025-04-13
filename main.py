@@ -1,4 +1,5 @@
 import requests
+from memory_profiler import profile
 
 def get_text(url):
     response = requests.get(url)
@@ -13,6 +14,7 @@ def count_word_frequencies(url, word):
             count += 1
     return count
 
+@profile
 def main():
     words_file = "words.txt"
     url = "https://eng.mipt.ru/why-mipt/"
